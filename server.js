@@ -86,9 +86,11 @@ Object.values(TEAMS).forEach(team => {
     requireAuth(team.username, team.password, `${team.name} Dashboard`),
     (req, res) => {
       const html = fs.readFileSync(path.join(__dirname, 'public', 'team.html'), 'utf8');
-      const injected = html.replace('__TEAM_CONFIG__', JSON.stringify({
-        id: team.id, pillar: team.pillar, name: team.name, lead: team.lead, color: team.color
-      }));
+      const injected = html
+        .replace('__TEAM_CONFIG__', JSON.stringify({
+          id: team.id, pillar: team.pillar, name: team.name, lead: team.lead, color: team.color
+        }))
+        .replace('__TEAM_CREDS__', `${team.username}:${team.password}`);
       res.send(injected);
     }
   );
