@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USD1 · Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Space Grotesk', sans-serif; background: #080C14; color: #E2E8F0; min-height: 100vh; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 2px; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .animate-in { animation: fade-in 0.35s ease forwards; }
+    select option { background: #0F1929; color: #E2E8F0; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+const TEAMS = [
+  {
+    id: "eng", pillar: "Pillar 1", name: "Engineering", lead: "TBD", color: "#3B82F6", dim: "#1D4ED8",
+    phases: [
+      { label: "Phase 1 · Days 0–14", tasks: [
+        { id:"e1",  text:"SDK + headless wallet live in marketplace & GitHub", status:"in-flight",  priority:"critical" },
+        { id:"e2",  text:"npm + PyPI packages published", status:"in-flight",  priority:"critical" },
+        { id:"e3",  text:"Machine-readable chain support registry published", status:"open",      priority:"high" },
+        { id:"e4",  text:"Bridge coverage documented (contracts + audit status)", status:"open",  priority:"high" },
+        { id:"e5",  text:"EIP-3009 spec finalized and published", status:"in-progress", priority:"critical" },
+        { id:"e6",  text:"EIP-3009 contract modifications complete + test suite", status:"in-progress", priority:"critical" },
+        { id:"e7",  text:"EIP-3009 testnet deployed for audit reference", status:"open",      priority:"high" },
+        { id:"e8",  text:"Audit firms engaged, scope confirmed, timelines locked", status:"open", priority:"high" },
+        { id:"e9",  text:"Standards participation owner assigned + bandwidth allocated", status:"open", priority:"high" },
+        { id:"e10", text:"Monad deployment date confirmed", status:"in-flight",  priority:"high" },
+      ]},
+      { label: "Phase 2 · Days 14–30", tasks: [
+        { id:"e11", text:"EIP-3009 audit completion — all firms", status:"audit-gated", priority:"critical" },
+        { id:"e12", text:"EIP-3009 mainnet deployment (ETH + BSC)", status:"audit-gated", priority:"critical" },
+        { id:"e13", text:"SDK updated with EIP-3009 methods", status:"audit-gated", priority:"critical" },
+        { id:"e14", text:"Monad deployment live + in chain registry", status:"in-flight",  priority:"high" },
+        { id:"e15", text:"AI Agent Consortium formal membership", status:"open",       priority:"medium" },
+        { id:"e16", text:"X402 spec reviewed + comment/PR submitted", status:"open",  priority:"medium" },
+        { id:"e17", text:"Audit reports published publicly", status:"audit-gated", priority:"high" },
+      ]},
+      { label: "Phase 3 · Days 30–60", tasks: [
+        { id:"e18", text:"USD1 Agentic Payment Specification published on GitHub", status:"planned", priority:"high" },
+        { id:"e19", text:"ERC-8004 conformance verified + reference test vectors", status:"planned", priority:"high" },
+        { id:"e20", text:"Base native deployment live", status:"planned", priority:"medium" },
+        { id:"e21", text:"Arbitrum native deployment live", status:"planned", priority:"medium" },
+        { id:"e22", text:"Agent-only hackathon sandbox environment deployed", status:"planned", priority:"medium" },
+        { id:"e23", text:"Multi-chain EIP-3009 reference implementation published", status:"planned", priority:"medium" },
+      ]},
+    ]
+  },
+  {
+    id: "bd", pillar: "Pillar 2", name: "Business Dev", lead: "TBD", color: "#8B5CF6", dim: "#5B21B6",
+    phases: [
+      { label: "Phase 1 · Days 0–14", tasks: [
+        { id:"b1", text:"G42 compute billing meeting scheduled with correct counterpart", status:"open", priority:"critical" },
+        { id:"b2", text:"Integration brief prepared (one-page billing flow diagram)", status:"open", priority:"critical" },
+        { id:"b3", text:"Top-10 G42 AI lab targets identified", status:"open", priority:"high" },
+        { id:"b4", text:"BD lead assigned to each geographic corridor", status:"open", priority:"high" },
+        { id:"b5", text:"Direct WLFI relationship owner mapped for each G42-intro'd partner", status:"open", priority:"high" },
+      ]},
+      { label: "Phase 2 · Days 14–60", tasks: [
+        { id:"b6",  text:"G42 has reviewed and responded to integration framework", status:"open", priority:"critical" },
+        { id:"b7",  text:"At least one sovereign deployment country has active USD1 conversation", status:"open", priority:"high" },
+        { id:"b8",  text:"3 AI lab partnership conversations initiated via G42", status:"open", priority:"high" },
+        { id:"b9",  text:"UAE ADGM financial licensing conversation initiated", status:"open", priority:"high" },
+        { id:"b10", text:"Hackathon co-promoter partner confirmed", status:"open", priority:"medium" },
+        { id:"b11", text:"2-3 regional fintechs per corridor engaged (MY-ID, UAE-PK)", status:"open", priority:"medium" },
+      ]},
+      { label: "Phase 3 · Days 60–120", tasks: [
+        { id:"b12", text:"First live G42 platform billing integration deployed", status:"planned", priority:"critical" },
+        { id:"b13", text:"3 signed AI lab partnership agreements", status:"planned", priority:"high" },
+        { id:"b14", text:"5 financial institution partners live with USD1 settlement", status:"planned", priority:"high" },
+        { id:"b15", text:"Sovereign entity MOU or integration announcement", status:"planned", priority:"high" },
+        { id:"b16", text:"Agent marketplace USD1 billing default in 3+ frameworks", status:"planned", priority:"high" },
+      ]},
+    ]
+  },
+  {
+    id: "defi", pillar: "Pillar 3", name: "DeFi & Exchange", lead: "TBD", color: "#10B981", dim: "#047857",
+    phases: [
+      { label: "Phase 1 · Days 0–14", tasks: [
+        { id:"d1", text:"Wintermute relationship initiated — term sheet discussion", status:"open", priority:"critical" },
+        { id:"d2", text:"Cumberland relationship initiated — term sheet discussion", status:"open", priority:"critical" },
+        { id:"d3", text:"PoR API submitted to Gauntlet for collateral risk scoring", status:"open", priority:"high" },
+        { id:"d4", text:"PoR API submitted to Chaos Labs", status:"open", priority:"high" },
+        { id:"d5", text:"DefiLlama stablecoin data integration submitted", status:"open", priority:"high" },
+        { id:"d6", text:"Current CEX listing status confirmed and table updated", status:"open", priority:"high" },
+        { id:"d7", text:"Gauntlet pre-assessment submitted (Aave, Compound)", status:"open", priority:"high" },
+      ]},
+      { label: "Phase 2 · Days 14–60", tasks: [
+        { id:"d8",  text:"2+ market maker agreements signed before first listing", status:"open", priority:"critical" },
+        { id:"d9",  text:"Aave ARC submitted to governance", status:"open", priority:"critical" },
+        { id:"d10", text:"Uniswap USD1/USDC pool seeded ($10M+)", status:"open", priority:"high" },
+        { id:"d11", text:"Curve pool deployed + gauge weight vote initiated", status:"open", priority:"high" },
+        { id:"d12", text:"Compound governance proposal submitted", status:"open", priority:"high" },
+        { id:"d13", text:"Morpho curators engaged (2–3 firms)", status:"open", priority:"medium" },
+        { id:"d14", text:"Binance and OKX listings confirmed", status:"open", priority:"critical" },
+        { id:"d15", text:"Coinbase Advanced Trade listing confirmed", status:"open", priority:"high" },
+        { id:"d16", text:"Hyperliquid team meeting held", status:"open", priority:"medium" },
+      ]},
+      { label: "Phase 3 · Days 60–180", tasks: [
+        { id:"d17", text:"Aave listing live — USD1 active collateral asset", status:"planned", priority:"critical" },
+        { id:"d18", text:"Uniswap pool depth $50M+", status:"planned", priority:"high" },
+        { id:"d19", text:"Curve gauge weight secured; CRV rewards flowing", status:"planned", priority:"high" },
+        { id:"d20", text:"Bybit and Kraken listings live", status:"planned", priority:"medium" },
+        { id:"d21", text:"At least 1 Morpho vault live with USD1 collateral", status:"planned", priority:"medium" },
+        { id:"d22", text:"USD1 live on Hyperliquid as margin collateral", status:"planned", priority:"medium" },
+        { id:"d23", text:"USD1 liquidity within 20% of USDC on Tier 1 protocols", status:"planned", priority:"critical" },
+      ]},
+    ]
+  },
+  {
+    id: "legal", pillar: "Pillar 4", name: "Legal & Compliance", lead: "TBD", color: "#F59E0B", dim: "#B45309",
+    phases: [
+      { label: "Phase 1 · Days 0–14", tasks: [
+        { id:"l1", text:"OCC application status memo prepared (internal)", status:"open", priority:"critical" },
+        { id:"l2", text:"Approved public language for OCC application finalized", status:"open", priority:"critical" },
+        { id:"l3", text:"Toolkit document list confirmed and prioritized", status:"open", priority:"high" },
+        { id:"l4", text:"Big Four firm outreach initiated (shortlist 3 firms)", status:"open", priority:"high" },
+        { id:"l5", text:"AML/BSA self-assessment initiated", status:"open", priority:"high" },
+      ]},
+      { label: "Phase 2 · Days 14–60", tasks: [
+        { id:"l6",  text:"Any open OCC information requests responded to", status:"in-flight", priority:"critical" },
+        { id:"l7",  text:"Big Four firm selected and engagement terms signed", status:"open", priority:"critical" },
+        { id:"l8",  text:"GENIUS Act compliance framework drafted by legal", status:"open", priority:"high" },
+        { id:"l9",  text:"Advisory board legal framework drafted", status:"open", priority:"high" },
+        { id:"l10", text:"Compliance white paper — first draft", status:"open", priority:"high" },
+        { id:"l11", text:"ADGM application initiated — local counsel engaged", status:"open", priority:"high" },
+        { id:"l12", text:"MAS MSF application initiated — Singapore counsel engaged", status:"open", priority:"high" },
+        { id:"l13", text:"Government relations / lobbying firm engaged", status:"open", priority:"medium" },
+        { id:"l14", text:"Post-OCC approval press release template ready", status:"open", priority:"medium" },
+        { id:"l15", text:"GENIUS Act compliance framework published publicly", status:"open", priority:"high" },
+        { id:"l16", text:"First Big Four attestation published", status:"open", priority:"critical" },
+        { id:"l17", text:"Compliance white paper published on WLFI properties", status:"open", priority:"high" },
+        { id:"l18", text:"Full v1.0 regulatory toolkit assembled and deployed", status:"open", priority:"high" },
+      ]},
+      { label: "Phase 3 · Days 60–180", tasks: [
+        { id:"l19", text:"At least 2 advisory board members recruited and announced", status:"planned", priority:"high" },
+        { id:"l20", text:"FCA cryptoasset business registration filed", status:"planned", priority:"medium" },
+        { id:"l21", text:"OCC conditional approval received", status:"in-flight", priority:"critical" },
+        { id:"l22", text:"Full advisory board (4 seats) announced", status:"planned", priority:"medium" },
+        { id:"l23", text:"ADGM authorization received", status:"planned", priority:"high" },
+        { id:"l24", text:"MAS MSF designation received", status:"planned", priority:"high" },
+      ]},
+    ]
+  },
+  {
+    id: "mktg", pillar: "Pillar 5", name: "Marketing", lead: "TBD", color: "#EF4444", dim: "#B91C1C",
+    phases: [
+      { label: "Phase 1 · Days 0–30", tasks: [
+        { id:"m1",  text:"Core Narrative Framework and Language Standards finalized", status:"open", priority:"critical" },
+        { id:"m2",  text:"'USD1: Agentic Economy's Financial Primitive' positioning post published", status:"open", priority:"critical" },
+        { id:"m3",  text:"Developer Guide co-authorship started with Engineering", status:"open", priority:"high" },
+        { id:"m4",  text:"'Agentic Economy Data' weekly series — first edition live", status:"open", priority:"high" },
+        { id:"m5",  text:"Hackathon planning started — prize pool, criteria, co-promoters", status:"open", priority:"high" },
+        { id:"m6",  text:"Economic research firm identified and engaged", status:"open", priority:"high" },
+        { id:"m7",  text:"Top 5 tier-1 media contacts briefed (off record)", status:"open", priority:"high" },
+        { id:"m8",  text:"White paper outline drafted + Legal review process engaged", status:"open", priority:"medium" },
+        { id:"m9",  text:"Hackathon announced with full details", status:"open", priority:"high" },
+      ]},
+      { label: "Phase 2 · Days 30–90", tasks: [
+        { id:"m10", text:"'Building Agentic Businesses with USD1' Developer Guide published", status:"planned", priority:"critical" },
+        { id:"m11", text:"'Agent Paymaster' tutorial published", status:"planned", priority:"high" },
+        { id:"m12", text:"Hackathon winners + case studies published", status:"planned", priority:"high" },
+        { id:"m13", text:"USD1 Agentic Payment Specification packaged and published", status:"planned", priority:"high" },
+        { id:"m14", text:"White paper first draft submitted to Legal + Engineering review", status:"planned", priority:"high" },
+        { id:"m15", text:"Agent Treasury contract announced (post-Engineering audit)", status:"planned", priority:"high" },
+        { id:"m16", text:"Speaker submissions filed: Consensus, Token2049, Money 20/20", status:"planned", priority:"medium" },
+        { id:"m17", text:"USD1 growth comparison data story published", status:"planned", priority:"high" },
+        { id:"m18", text:"First keynote delivered", status:"planned", priority:"high" },
+        { id:"m19", text:"Weekly Agentic Economy series — 4 editions in Phase 2", status:"planned", priority:"medium" },
+      ]},
+      { label: "Phase 3 · Days 90–180", tasks: [
+        { id:"m20", text:"WLFI white paper: 'USD1 as Critical Infrastructure' published", status:"planned", priority:"critical" },
+        { id:"m21", text:"White paper distributed to institutional + sovereign contacts", status:"planned", priority:"high" },
+        { id:"m22", text:"Economic study published — press + institutional distribution", status:"planned", priority:"high" },
+        { id:"m23", text:"Press milestone execution — $5B, $7.5B, $10B market cap", status:"planned", priority:"high" },
+        { id:"m24", text:"Second + third keynote appearances (Token2049, G42 event)", status:"planned", priority:"medium" },
+        { id:"m25", text:"Developer Guide V2 published with updated chain + EIP-3009 content", status:"planned", priority:"medium" },
+      ]},
+    ]
+  }
+];
+
+const STATUS_CFG = {
+  "live":        { label:"LIVE",        color:"#10B981", bg:"rgba(16,185,129,0.12)",  dot:"#10B981" },
+  "in-flight":   { label:"IN FLIGHT",   color:"#3B82F6", bg:"rgba(59,130,246,0.12)",  dot:"#3B82F6" },
+  "in-progress": { label:"IN PROGRESS", color:"#8B5CF6", bg:"rgba(139,92,246,0.12)",  dot:"#8B5CF6" },
+  "audit-gated": { label:"AUDIT-GATED", color:"#F59E0B", bg:"rgba(245,158,11,0.12)",  dot:"#F59E0B" },
+  "open":        { label:"OPEN",        color:"#94A3B8", bg:"rgba(148,163,184,0.08)", dot:"#94A3B8" },
+  "planned":     { label:"PLANNED",     color:"#64748B", bg:"rgba(100,116,139,0.08)", dot:"#64748B" },
+  "complete":    { label:"COMPLETE",    color:"#10B981", bg:"rgba(16,185,129,0.15)",  dot:"#10B981" },
+  "blocked":     { label:"BLOCKED",     color:"#EF4444", bg:"rgba(239,68,68,0.12)",   dot:"#EF4444" },
+  "overdue":     { label:"OVERDUE",     color:"#EF4444", bg:"rgba(239,68,68,0.12)",   dot:"#EF4444" },
+};
+
+const PRIORITY_CFG = {
+  "critical": { label:"CRITICAL", color:"#EF4444" },
+  "high":     { label:"HIGH",     color:"#F59E0B" },
+  "medium":   { label:"MED",      color:"#64748B" },
+};
+
+const STATUS_ORDER = ["complete","live","in-flight","in-progress","audit-gated","open","planned","blocked","overdue"];
+
+function calcScore(team, taskData) {
+  const all = team.phases.flatMap(p => p.tasks);
+  const total = all.length;
+  const done  = all.filter(t => { const s = taskData[t.id]||t.status; return s==="complete"||s==="live"; }).length;
+  const active= all.filter(t => { const s = taskData[t.id]||t.status; return ["in-flight","in-progress","audit-gated"].includes(s); }).length;
+  const blocked = all.filter(t => { const s = taskData[t.id]||t.status; return s==="blocked"||s==="overdue"; }).length;
+  return { total, done, active, blocked, pct: total ? Math.round((done/total)*100) : 0 };
+}
+
+function StatusBadge({ status, small }) {
+  const s = STATUS_CFG[status] || STATUS_CFG["open"];
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:small?"2px 6px":"3px 8px",borderRadius:3,background:s.bg,border:`1px solid ${s.color}22`,fontSize:small?9:10,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:s.color,letterSpacing:"0.08em",whiteSpace:"nowrap"}}>
+      <span style={{width:5,height:5,borderRadius:"50%",background:s.dot,flexShrink:0,animation:["in-flight","in-progress"].includes(status)?"pulse-dot 1.6s ease infinite":"none"}}/>
+      {s.label}
+    </span>
+  );
+}
+
+function ProgressRing({ pct, color, size=52, stroke=4 }) {
+  const r = (size-stroke)/2;
+  const circ = 2*Math.PI*r;
+  const dash = (pct/100)*circ;
+  return (
+    <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#1E293B" strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{transition:"stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1)"}}/>
+    </svg>
+  );
+}
+
+function TaskRow({ task, onStatusChange, teamColor }) {
+  const [open, setOpen] = useState(false);
+  const s = STATUS_CFG[task.status] || STATUS_CFG["open"];
+  const p = PRIORITY_CFG[task.priority] || PRIORITY_CFG["medium"];
+  return (
+    <div style={{background:"#0D1524",border:`1px solid ${task.status==="blocked"||task.status==="overdue"?"#EF444430":"#1E293B"}`,borderRadius:6,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,position:"relative"}}>
+      <div onClick={()=>onStatusChange(task.id, task.status==="complete"?"open":"complete")} style={{width:16,height:16,borderRadius:3,flexShrink:0,border:`2px solid ${task.status==="complete"?teamColor:"#334155"}`,background:task.status==="complete"?teamColor:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+        {task.status==="complete" && <span style={{fontSize:9,color:"#fff",lineHeight:1}}>✓</span>}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:13,color:task.status==="complete"?"#475569":"#CBD5E1",textDecoration:task.status==="complete"?"line-through":"none",lineHeight:1.4}}>{task.text}</div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+        <span style={{fontSize:9,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,color:p.color}}>{p.label}</span>
+        <div style={{position:"relative"}}>
+          <div onClick={()=>setOpen(!open)} style={{cursor:"pointer"}}><StatusBadge status={task.status} small /></div>
+          {open && (
+            <div style={{position:"absolute",right:0,top:"calc(100% + 4px)",zIndex:100,background:"#0F1929",border:"1px solid #1E293B",borderRadius:6,padding:4,minWidth:130,boxShadow:"0 8px 24px rgba(0,0,0,0.5)"}}>
+              {STATUS_ORDER.map(st => (
+                <div key={st} onClick={()=>{onStatusChange(task.id,st);setOpen(false);}} style={{padding:"6px 8px",borderRadius:4,cursor:"pointer",background:task.status===st?"#1E293B":"transparent"}}>
+                  <StatusBadge status={st} small/>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TeamDetail({ team, taskData, onStatusChange }) {
+  const [openPhases, setOpenPhases] = useState({0:true,1:true,2:true});
+  const togglePhase = (i) => setOpenPhases(p=>({...p,[i]:!p[i]}));
+  return (
+    <div style={{animation:"fade-in 0.3s ease"}}>
+      <div style={{background:`linear-gradient(135deg,${team.color}18 0%,transparent 60%)`,border:`1px solid ${team.color}30`,borderRadius:10,padding:"20px 24px",marginBottom:20}}>
+        <div style={{fontSize:11,color:team.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.12em",marginBottom:4}}>{team.pillar} · EXECUTION TRACKER</div>
+        <div style={{fontSize:24,fontWeight:700,marginBottom:8}}>{team.name}</div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:12,color:"#64748B"}}>Team Lead:</span>
+          <span style={{fontSize:12,fontFamily:"'JetBrains Mono',monospace",color:team.lead==="TBD"?"#475569":"#E2E8F0",fontStyle:team.lead==="TBD"?"italic":"normal"}}>{team.lead}</span>
+        </div>
+      </div>
+      {team.phases.map((phase, pi) => {
+        const phaseTasks = phase.tasks.map(t=>({...t,status:taskData[t.id]||t.status}));
+        const done = phaseTasks.filter(t=>t.status==="complete"||t.status==="live").length;
+        const isOpen = openPhases[pi] !== false;
+        return (
+          <div key={pi} style={{marginBottom:16}}>
+            <div onClick={()=>togglePhase(pi)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:"#0D1524",border:"1px solid #1E293B",borderRadius:isOpen?"8px 8px 0 0":8,cursor:"pointer"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:6,height:6,borderRadius:"50%",background:done===phaseTasks.length?"#10B981":team.color}}/>
+                <span style={{fontSize:12,fontWeight:600,fontFamily:"'JetBrains Mono',monospace",color:"#94A3B8"}}>{phase.label}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:"#475569"}}>{done}/{phaseTasks.length} DONE</span>
+                <div style={{width:80,height:3,background:"#1E293B",borderRadius:2,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${(done/phaseTasks.length)*100}%`,background:team.color,borderRadius:2,transition:"width 0.5s ease"}}/>
+                </div>
+                <span style={{fontSize:10,color:"#475569"}}>{isOpen?"▲":"▼"}</span>
+              </div>
+            </div>
+            {isOpen && (
+              <div style={{border:"1px solid #1E293B",borderTop:"none",borderRadius:"0 0 8px 8px",padding:8,display:"flex",flexDirection:"column",gap:4,background:"#080C14"}}>
+                {phaseTasks.map(task=>(
+                  <TaskRow key={task.id} task={task} teamColor={team.color} onStatusChange={onStatusChange}/>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function OverviewGrid({ taskData, onSelectTeam }) {
+  const allTasks = TEAMS.flatMap(t=>t.phases.flatMap(p=>p.tasks.map(tk=>({...tk,status:taskData[tk.id]||tk.status,team:t.name,teamColor:t.color}))));
+  const criticalOpen = allTasks.filter(t=>t.priority==="critical"&&!["complete","live","in-flight","in-progress"].includes(t.status));
+  const blocked = allTasks.filter(t=>t.status==="blocked"||t.status==="overdue");
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+        {[
+          {label:"TOTAL INITIATIVES",val:allTasks.length,color:"#94A3B8",icon:"◈"},
+          {label:"IN PROGRESS",val:allTasks.filter(t=>["in-flight","in-progress","live"].includes(t.status)).length,color:"#3B82F6",icon:"◉"},
+          {label:"COMPLETED",val:allTasks.filter(t=>["complete","live"].includes(t.status)).length,color:"#10B981",icon:"✓"},
+          {label:"CRITICAL OPEN",val:criticalOpen.length,color:"#EF4444",icon:"⚑"},
+        ].map(m=>(
+          <div key={m.label} style={{background:"#0D1524",border:`1px solid ${m.color}22`,borderRadius:8,padding:"14px 16px"}}>
+            <div style={{fontSize:20,marginBottom:4}}>{m.icon}</div>
+            <div style={{fontSize:26,fontWeight:700,color:m.color,fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{m.val}</div>
+            <div style={{fontSize:9,color:"#475569",letterSpacing:"0.1em",marginTop:4}}>{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{background:"#0D1524",border:"1px solid #1E293B",borderRadius:8,padding:20}}>
+        <div style={{fontSize:11,color:"#64748B",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",marginBottom:14}}>TEAM PERFORMANCE</div>
+        {TEAMS.map(team=>{
+          const s = calcScore(team, taskData);
+          const isLow = s.pct < 10 && s.done < 2;
+          return (
+            <div key={team.id} style={{marginBottom:16,cursor:"pointer"}} onClick={()=>onSelectTeam(team.id)}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:team.color}}/>
+                  <span style={{fontSize:13,fontWeight:600}}>{team.name}</span>
+                  <span style={{fontSize:10,color:"#475569",fontFamily:"'JetBrains Mono',monospace"}}>{team.pillar}</span>
+                  {isLow && <span style={{fontSize:9,color:"#EF4444",fontFamily:"'JetBrains Mono',monospace",background:"#EF444415",padding:"2px 6px",borderRadius:3}}>UNDERPERFORMING</span>}
+                  {s.blocked>0 && <span style={{fontSize:9,color:"#F59E0B",fontFamily:"'JetBrains Mono',monospace",background:"#F59E0B15",padding:"2px 6px",borderRadius:3}}>{s.blocked} BLOCKED</span>}
+                </div>
+                <span style={{fontSize:12,fontFamily:"'JetBrains Mono',monospace",color:team.color,fontWeight:700}}>{s.pct}%</span>
+              </div>
+              <div style={{position:"relative",height:6,background:"#1E293B",borderRadius:3,overflow:"hidden"}}>
+                <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${s.pct}%`,background:team.color,borderRadius:3,transition:"width 0.8s cubic-bezier(0.4,0,0.2,1)"}}/>
+                {s.active>0&&s.total>0&&<div style={{position:"absolute",left:`${s.pct}%`,top:0,height:"100%",width:`${(s.active/s.total)*100}%`,background:`${team.color}40`,borderRadius:"0 3px 3px 0"}}/>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {(blocked.length>0||criticalOpen.length>0) && (
+        <div style={{background:"#0D1524",border:"1px solid #EF444425",borderRadius:8,padding:20}}>
+          <div style={{fontSize:11,color:"#EF4444",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",marginBottom:14}}>⚑ REQUIRES LEADERSHIP ATTENTION</div>
+          {[...blocked,...criticalOpen.filter(t=>!blocked.find(b=>b.id===t.id))].slice(0,8).map(t=>(
+            <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #1E293B"}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:t.teamColor,flexShrink:0}}/>
+              <span style={{fontSize:11,color:"#94A3B8",fontFamily:"'JetBrains Mono',monospace",minWidth:80}}>{t.team.toUpperCase().slice(0,8)}</span>
+              <span style={{flex:1,fontSize:12,color:"#CBD5E1"}}>{t.text}</span>
+              <StatusBadge status={t.status} small/>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{background:"#0D1524",border:"1px solid #1E293B",borderRadius:8,padding:20}}>
+        <div style={{fontSize:11,color:"#64748B",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",marginBottom:14}}>CROSS-TEAM TIMELINE</div>
+        {["Phase 1 · Days 0–30","Phase 2 · Days 30–90","Phase 3 · Days 90–180"].map((phase,pi)=>{
+          const phaseTasks = TEAMS.flatMap(t=>(t.phases[pi]?.tasks||[]).map(tk=>({...tk,status:taskData[tk.id]||tk.status,teamColor:t.color,teamName:t.name})));
+          const done = phaseTasks.filter(t=>["complete","live"].includes(t.status)).length;
+          return (
+            <div key={phase} style={{marginBottom:16}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{fontSize:12,fontWeight:600,color:"#94A3B8",fontFamily:"'JetBrains Mono',monospace"}}>{phase}</span>
+                <span style={{fontSize:11,color:"#475569",fontFamily:"'JetBrains Mono',monospace"}}>{done}/{phaseTasks.length}</span>
+              </div>
+              <div style={{display:"flex",gap:2}}>
+                {phaseTasks.map(t=>(
+                  <div key={t.id} title={`${t.teamName}: ${t.text}`} style={{flex:1,height:8,borderRadius:2,background:["complete","live"].includes(t.status)?t.teamColor:["in-flight","in-progress"].includes(t.status)?`${t.teamColor}80`:t.status==="blocked"?"#EF4444":"#1E293B",transition:"all 0.3s"}}/>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [view, setView] = useState("overview");
+  const [taskData, setTaskData] = useState({});
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/tasks').then(r=>r.json()).then(data=>setTaskData(data)).catch(()=>{});
+  }, []);
+
+  const handleStatusChange = useCallback((taskId, newStatus) => {
+    setTaskData(prev => {
+      const updated = {...prev, [taskId]: newStatus};
+      setSaving(true);
+      fetch(`/api/tasks/${taskId}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:newStatus})})
+        .finally(()=>setSaving(false));
+      return updated;
+    });
+    setLastUpdated(new Date());
+  }, []);
+
+  const activeTeam = TEAMS.find(t=>t.id===selectedTeam);
+
+  return (
+    <div style={{minHeight:"100vh",background:"#080C14",color:"#E2E8F0"}}>
+      {/* NAV */}
+      <div style={{background:"#0A1120",borderBottom:"1px solid #1E293B",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,zIndex:50}}>
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:28,height:28,borderRadius:6,background:"linear-gradient(135deg,#1D4ED8 0%,#7C3AED 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>W</div>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,lineHeight:1}}>USD1</div>
+              <div style={{fontSize:9,color:"#475569",letterSpacing:"0.12em"}}>COMMAND CENTER</div>
+            </div>
+          </div>
+          <div style={{width:1,height:20,background:"#1E293B"}}/>
+          {["overview","search"].map(v=>(
+            <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1E293B":"transparent",border:"none",borderRadius:5,padding:"5px 12px",color:view===v?"#E2E8F0":"#64748B",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+              {v==="overview"?"Overview":"All Tasks"}
+            </button>
+          ))}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          {saving && <span style={{fontSize:10,color:"#F59E0B",fontFamily:"'JetBrains Mono',monospace"}}>SAVING...</span>}
+          <div style={{fontSize:10,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>
+            {lastUpdated.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+          </div>
+          <div style={{background:"#0D1524",border:"1px solid #10B98133",borderRadius:4,padding:"4px 10px",fontSize:10,color:"#10B981",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>● LIVE</div>
+        </div>
+      </div>
+
+      {/* LAYOUT */}
+      <div style={{display:"flex",height:"calc(100vh - 56px)"}}>
+        {/* SIDEBAR */}
+        <div style={{width:240,flexShrink:0,background:"#0A1120",borderRight:"1px solid #1E293B",padding:16,overflowY:"auto",display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:9,color:"#334155",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.12em",marginBottom:4,paddingLeft:2}}>TEAMS</div>
+          <div onClick={()=>{setSelectedTeam(null);setView("overview");}} style={{padding:"8px 12px",borderRadius:6,background:view==="overview"&&!selectedTeam?"#1E293B":"transparent",border:`1px solid ${view==="overview"&&!selectedTeam?"#334155":"transparent"}`,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:12}}>◈</span>
+            <span style={{fontSize:13,fontWeight:600,color:view==="overview"&&!selectedTeam?"#E2E8F0":"#64748B"}}>All Teams</span>
+          </div>
+          <div style={{height:1,background:"#1E293B",margin:"4px 0"}}/>
+          {TEAMS.map(team=>{
+            const s = calcScore(team, taskData);
+            const selected = selectedTeam===team.id;
+            const isLow = s.pct<10&&s.done<2;
+            return (
+              <div key={team.id} onClick={()=>{setSelectedTeam(team.id);setView("team");}} style={{padding:"9px 12px",borderRadius:6,background:selected?`${team.color}15`:"transparent",border:`1px solid ${selected?`${team.color}40`:"transparent"}`,cursor:"pointer"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:team.color}}/>
+                    <span style={{fontSize:13,fontWeight:600,color:selected?team.color:"#94A3B8"}}>{team.name}</span>
+                  </div>
+                  <span style={{fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:team.color,fontWeight:700}}>{s.pct}%</span>
+                </div>
+                <div style={{marginTop:6,height:2,background:"#1E293B",borderRadius:1}}>
+                  <div style={{height:"100%",width:`${s.pct}%`,background:team.color,borderRadius:1,transition:"width 0.5s"}}/>
+                </div>
+                {isLow && <div style={{marginTop:5,fontSize:9,color:"#EF4444",fontFamily:"'JetBrains Mono',monospace"}}>⚑ UNDERPERFORMING</div>}
+                {s.blocked>0 && <div style={{marginTop:3,fontSize:9,color:"#F59E0B",fontFamily:"'JetBrains Mono',monospace"}}>⚠ {s.blocked} BLOCKED</div>}
+              </div>
+            );
+          })}
+          <div style={{marginTop:"auto",paddingTop:16,borderTop:"1px solid #1E293B"}}>
+            <div style={{fontSize:9,color:"#334155",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.12em",marginBottom:8}}>STATUS KEY</div>
+            {["complete","in-flight","audit-gated","open","blocked"].map(s=>(
+              <div key={s} style={{marginBottom:5}}><StatusBadge status={s} small/></div>
+            ))}
+          </div>
+        </div>
+
+        {/* CONTENT */}
+        <div style={{flex:1,overflowY:"auto",padding:24}}>
+          {view==="overview"&&!selectedTeam&&(
+            <div>
+              <div style={{marginBottom:20}}>
+                <h1 style={{fontSize:22,fontWeight:700,marginBottom:4}}>Strategic Execution Dashboard</h1>
+                <p style={{fontSize:13,color:"#64748B"}}>USD1 Strategic Dominance Roadmap · All Pillars · March 2026</p>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:24}}>
+                {TEAMS.map(team=>{
+                  const s = calcScore(team,taskData);
+                  return (
+                    <div key={team.id} onClick={()=>{setSelectedTeam(team.id);setView("team");}} style={{background:`${team.color}08`,border:`1px solid ${selectedTeam===team.id?team.color:"#1E293B"}`,borderRadius:8,padding:"16px 18px",cursor:"pointer",position:"relative",overflow:"hidden"}}>
+                      <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:team.color,opacity:0.7,borderRadius:"3px 0 0 3px"}}/>
+                      <div style={{paddingLeft:8}}>
+                        <div style={{fontSize:9,color:"#64748B",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.1em",marginBottom:3}}>{team.pillar}</div>
+                        <div style={{fontSize:14,fontWeight:700,color:"#E2E8F0",marginBottom:12}}>{team.name}</div>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                          <div style={{position:"relative"}}>
+                            <ProgressRing pct={s.pct} color={team.color}/>
+                            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:team.color,fontFamily:"'JetBrains Mono',monospace"}}>{s.pct}%</div>
+                          </div>
+                          <div>
+                            <div style={{fontSize:18,fontWeight:700,color:team.color,fontFamily:"'JetBrains Mono',monospace"}}>{s.done}/{s.total}</div>
+                            <div style={{fontSize:9,color:"#475569"}}>DONE</div>
+                          </div>
+                        </div>
+                        {s.blocked>0&&<div style={{background:"#EF444415",border:"1px solid #EF444430",borderRadius:4,padding:"3px 8px",fontSize:10,color:"#EF4444",fontFamily:"'JetBrains Mono',monospace"}}>⚠ {s.blocked} BLOCKED</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <OverviewGrid taskData={taskData} onSelectTeam={(id)=>{setSelectedTeam(id);setView("team");}}/>
+            </div>
+          )}
+
+          {view==="team"&&activeTeam&&(
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20}}>
+                <button onClick={()=>{setSelectedTeam(null);setView("overview");}} style={{background:"transparent",border:"none",color:"#64748B",cursor:"pointer",fontSize:12}}>← Overview</button>
+                <span style={{color:"#334155"}}>/</span>
+                <span style={{fontSize:12,color:activeTeam.color,fontFamily:"'JetBrains Mono',monospace"}}>{activeTeam.name}</span>
+              </div>
+              <TeamDetail team={activeTeam} taskData={taskData} onStatusChange={handleStatusChange}/>
+            </div>
+          )}
+
+          {view==="search"&&(
+            <div>
+              <h2 style={{fontSize:18,fontWeight:700,marginBottom:16}}>All Initiatives</h2>
+              {TEAMS.map(team=>(
+                <div key={team.id} style={{marginBottom:24}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:team.color}}/>
+                    <span style={{fontSize:13,fontWeight:700,color:team.color}}>{team.name}</span>
+                    <span style={{fontSize:10,color:"#475569",fontFamily:"'JetBrains Mono',monospace"}}>{team.pillar}</span>
+                  </div>
+                  {team.phases.map((phase,pi)=>(
+                    <div key={pi} style={{marginBottom:8}}>
+                      <div style={{fontSize:10,color:"#334155",fontFamily:"'JetBrains Mono',monospace",marginBottom:4,paddingLeft:4}}>{phase.label}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {phase.tasks.map(task=>(
+                          <TaskRow key={task.id} task={{...task,status:taskData[task.id]||task.status}} teamColor={team.color} onStatusChange={handleStatusChange}/>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
