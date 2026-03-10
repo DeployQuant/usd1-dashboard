@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USD1 · Team Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Space Grotesk', sans-serif; background: #080C14; color: #E2E8F0; min-height: 100vh; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 2px; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>window.__TEAM__ = __TEAM_CONFIG__;</script>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const TEAM = window.__TEAM__;
+
+const ALL_TASKS = {
+  eng: [
+    { phase: "Phase 1 · Days 0–14", tasks: [
+      { id:"e1",  text:"SDK + headless wallet live in marketplace & GitHub", status:"in-flight",  priority:"critical" },
+      { id:"e2",  text:"npm + PyPI packages published", status:"in-flight",  priority:"critical" },
+      { id:"e3",  text:"Machine-readable chain support registry published", status:"open",      priority:"high" },
+      { id:"e4",  text:"Bridge coverage documented (contracts + audit status)", status:"open",  priority:"high" },
+      { id:"e5",  text:"EIP-3009 spec finalized and published", status:"in-progress", priority:"critical" },
+      { id:"e6",  text:"EIP-3009 contract modifications complete + test suite", status:"in-progress", priority:"critical" },
+      { id:"e7",  text:"EIP-3009 testnet deployed for audit reference", status:"open",      priority:"high" },
+      { id:"e8",  text:"Audit firms engaged, scope confirmed, timelines locked", status:"open", priority:"high" },
+      { id:"e9",  text:"Standards participation owner assigned + bandwidth allocated", status:"open", priority:"high" },
+      { id:"e10", text:"Monad deployment date confirmed", status:"in-flight",  priority:"high" },
+    ]},
+    { phase: "Phase 2 · Days 14–30", tasks: [
+      { id:"e11", text:"EIP-3009 audit completion — all firms", status:"audit-gated", priority:"critical" },
+      { id:"e12", text:"EIP-3009 mainnet deployment (ETH + BSC)", status:"audit-gated", priority:"critical" },
+      { id:"e13", text:"SDK updated with EIP-3009 methods", status:"audit-gated", priority:"critical" },
+      { id:"e14", text:"Monad deployment live + in chain registry", status:"in-flight",  priority:"high" },
+      { id:"e15", text:"AI Agent Consortium formal membership", status:"open",       priority:"medium" },
+      { id:"e16", text:"X402 spec reviewed + comment/PR submitted", status:"open",  priority:"medium" },
+      { id:"e17", text:"Audit reports published publicly", status:"audit-gated", priority:"high" },
+    ]},
+    { phase: "Phase 3 · Days 30–60", tasks: [
+      { id:"e18", text:"USD1 Agentic Payment Specification published on GitHub", status:"planned", priority:"high" },
+      { id:"e19", text:"ERC-8004 conformance verified + reference test vectors", status:"planned", priority:"high" },
+      { id:"e20", text:"Base native deployment live", status:"planned", priority:"medium" },
+      { id:"e21", text:"Arbitrum native deployment live", status:"planned", priority:"medium" },
+      { id:"e22", text:"Agent-only hackathon sandbox environment deployed", status:"planned", priority:"medium" },
+      { id:"e23", text:"Multi-chain EIP-3009 reference implementation published", status:"planned", priority:"medium" },
+    ]},
+  ],
+  bd: [
+    { phase: "Phase 1 · Days 0–14", tasks: [
+      { id:"b1", text:"G42 compute billing meeting scheduled with correct counterpart", status:"open", priority:"critical" },
+      { id:"b2", text:"Integration brief prepared (one-page billing flow diagram)", status:"open", priority:"critical" },
+      { id:"b3", text:"Top-10 G42 AI lab targets identified", status:"open", priority:"high" },
+      { id:"b4", text:"BD lead assigned to each geographic corridor", status:"open", priority:"high" },
+      { id:"b5", text:"Direct WLFI relationship owner mapped for each G42-intro'd partner", status:"open", priority:"high" },
+    ]},
+    { phase: "Phase 2 · Days 14–60", tasks: [
+      { id:"b6",  text:"G42 has reviewed and responded to integration framework", status:"open", priority:"critical" },
+      { id:"b7",  text:"At least one sovereign deployment country has active USD1 conversation", status:"open", priority:"high" },
+      { id:"b8",  text:"3 AI lab partnership conversations initiated via G42", status:"open", priority:"high" },
+      { id:"b9",  text:"UAE ADGM financial licensing conversation initiated", status:"open", priority:"high" },
+      { id:"b10", text:"Hackathon co-promoter partner confirmed", status:"open", priority:"medium" },
+      { id:"b11", text:"2-3 regional fintechs per corridor engaged (MY-ID, UAE-PK)", status:"open", priority:"medium" },
+    ]},
+    { phase: "Phase 3 · Days 60–120", tasks: [
+      { id:"b12", text:"First live G42 platform billing integration deployed", status:"planned", priority:"critical" },
+      { id:"b13", text:"3 signed AI lab partnership agreements", status:"planned", priority:"high" },
+      { id:"b14", text:"5 financial institution partners live with USD1 settlement", status:"planned", priority:"high" },
+      { id:"b15", text:"Sovereign entity MOU or integration announcement", status:"planned", priority:"high" },
+      { id:"b16", text:"Agent marketplace USD1 billing default in 3+ frameworks", status:"planned", priority:"high" },
+    ]},
+  ],
+  defi: [
+    { phase: "Phase 1 · Days 0–14", tasks: [
+      { id:"d1", text:"Wintermute relationship initiated — term sheet discussion", status:"open", priority:"critical" },
+      { id:"d2", text:"Cumberland relationship initiated — term sheet discussion", status:"open", priority:"critical" },
+      { id:"d3", text:"PoR API submitted to Gauntlet for collateral risk scoring", status:"open", priority:"high" },
+      { id:"d4", text:"PoR API submitted to Chaos Labs", status:"open", priority:"high" },
+      { id:"d5", text:"DefiLlama stablecoin data integration submitted", status:"open", priority:"high" },
+      { id:"d6", text:"Current CEX listing status confirmed and table updated", status:"open", priority:"high" },
+      { id:"d7", text:"Gauntlet pre-assessment submitted (Aave, Compound)", status:"open", priority:"high" },
+    ]},
+    { phase: "Phase 2 · Days 14–60", tasks: [
+      { id:"d8",  text:"2+ market maker agreements signed before first listing", status:"open", priority:"critical" },
+      { id:"d9",  text:"Aave ARC submitted to governance", status:"open", priority:"critical" },
+      { id:"d10", text:"Uniswap USD1/USDC pool seeded ($10M+)", status:"open", priority:"high" },
+      { id:"d11", text:"Curve pool deployed + gauge weight vote initiated", status:"open", priority:"high" },
+      { id:"d12", text:"Compound governance proposal submitted", status:"open", priority:"high" },
+      { id:"d13", text:"Morpho curators engaged (2–3 firms)", status:"open", priority:"medium" },
+      { id:"d14", text:"Binance and OKX listings confirmed", status:"open", priority:"critical" },
+      { id:"d15", text:"Coinbase Advanced Trade listing confirmed", status:"open", priority:"high" },
+      { id:"d16", text:"Hyperliquid team meeting held", status:"open", priority:"medium" },
+    ]},
+    { phase: "Phase 3 · Days 60–180", tasks: [
+      { id:"d17", text:"Aave listing live — USD1 active collateral asset", status:"planned", priority:"critical" },
+      { id:"d18", text:"Uniswap pool depth $50M+", status:"planned", priority:"high" },
+      { id:"d19", text:"Curve gauge weight secured; CRV rewards flowing", status:"planned", priority:"high" },
+      { id:"d20", text:"Bybit and Kraken listings live", status:"planned", priority:"medium" },
+      { id:"d21", text:"At least 1 Morpho vault live with USD1 collateral", status:"planned", priority:"medium" },
+      { id:"d22", text:"USD1 live on Hyperliquid as margin collateral", status:"planned", priority:"medium" },
+      { id:"d23", text:"USD1 liquidity within 20% of USDC on Tier 1 protocols", status:"planned", priority:"critical" },
+    ]},
+  ],
+  legal: [
+    { phase: "Phase 1 · Days 0–14", tasks: [
+      { id:"l1", text:"OCC application status memo prepared (internal)", status:"open", priority:"critical" },
+      { id:"l2", text:"Approved public language for OCC application finalized", status:"open", priority:"critical" },
+      { id:"l3", text:"Toolkit document list confirmed and prioritized", status:"open", priority:"high" },
+      { id:"l4", text:"Big Four firm outreach initiated (shortlist 3 firms)", status:"open", priority:"high" },
+      { id:"l5", text:"AML/BSA self-assessment initiated", status:"open", priority:"high" },
+    ]},
+    { phase: "Phase 2 · Days 14–60", tasks: [
+      { id:"l6",  text:"Any open OCC information requests responded to", status:"in-flight", priority:"critical" },
+      { id:"l7",  text:"Big Four firm selected and engagement terms signed", status:"open", priority:"critical" },
+      { id:"l8",  text:"GENIUS Act compliance framework drafted by legal", status:"open", priority:"high" },
+      { id:"l9",  text:"Advisory board legal framework drafted", status:"open", priority:"high" },
+      { id:"l10", text:"Compliance white paper — first draft", status:"open", priority:"high" },
+      { id:"l11", text:"ADGM application initiated — local counsel engaged", status:"open", priority:"high" },
+      { id:"l12", text:"MAS MSF application initiated — Singapore counsel engaged", status:"open", priority:"high" },
+      { id:"l13", text:"Government relations / lobbying firm engaged", status:"open", priority:"medium" },
+      { id:"l14", text:"Post-OCC approval press release template ready", status:"open", priority:"medium" },
+      { id:"l15", text:"GENIUS Act compliance framework published publicly", status:"open", priority:"high" },
+      { id:"l16", text:"First Big Four attestation published", status:"open", priority:"critical" },
+      { id:"l17", text:"Compliance white paper published on WLFI properties", status:"open", priority:"high" },
+      { id:"l18", text:"Full v1.0 regulatory toolkit assembled and deployed", status:"open", priority:"high" },
+    ]},
+    { phase: "Phase 3 · Days 60–180", tasks: [
+      { id:"l19", text:"At least 2 advisory board members recruited and announced", status:"planned", priority:"high" },
+      { id:"l20", text:"FCA cryptoasset business registration filed", status:"planned", priority:"medium" },
+      { id:"l21", text:"OCC conditional approval received", status:"in-flight", priority:"critical" },
+      { id:"l22", text:"Full advisory board (4 seats) announced", status:"planned", priority:"medium" },
+      { id:"l23", text:"ADGM authorization received", status:"planned", priority:"high" },
+      { id:"l24", text:"MAS MSF designation received", status:"planned", priority:"high" },
+    ]},
+  ],
+  mktg: [
+    { phase: "Phase 1 · Days 0–30", tasks: [
+      { id:"m1",  text:"Core Narrative Framework and Language Standards finalized", status:"open", priority:"critical" },
+      { id:"m2",  text:"'USD1: Agentic Economy's Financial Primitive' positioning post published", status:"open", priority:"critical" },
+      { id:"m3",  text:"Developer Guide co-authorship started with Engineering", status:"open", priority:"high" },
+      { id:"m4",  text:"'Agentic Economy Data' weekly series — first edition live", status:"open", priority:"high" },
+      { id:"m5",  text:"Hackathon planning started — prize pool, criteria, co-promoters", status:"open", priority:"high" },
+      { id:"m6",  text:"Economic research firm identified and engaged", status:"open", priority:"high" },
+      { id:"m7",  text:"Top 5 tier-1 media contacts briefed (off record)", status:"open", priority:"high" },
+      { id:"m8",  text:"White paper outline drafted + Legal review process engaged", status:"open", priority:"medium" },
+      { id:"m9",  text:"Hackathon announced with full details", status:"open", priority:"high" },
+    ]},
+    { phase: "Phase 2 · Days 30–90", tasks: [
+      { id:"m10", text:"'Building Agentic Businesses with USD1' Developer Guide published", status:"planned", priority:"critical" },
+      { id:"m11", text:"'Agent Paymaster' tutorial published", status:"planned", priority:"high" },
+      { id:"m12", text:"Hackathon winners + case studies published", status:"planned", priority:"high" },
+      { id:"m13", text:"USD1 Agentic Payment Specification packaged and published", status:"planned", priority:"high" },
+      { id:"m14", text:"White paper first draft submitted to Legal + Engineering review", status:"planned", priority:"high" },
+      { id:"m15", text:"Agent Treasury contract announced (post-Engineering audit)", status:"planned", priority:"high" },
+      { id:"m16", text:"Speaker submissions filed: Consensus, Token2049, Money 20/20", status:"planned", priority:"medium" },
+      { id:"m17", text:"USD1 growth comparison data story published", status:"planned", priority:"high" },
+      { id:"m18", text:"First keynote delivered", status:"planned", priority:"high" },
+      { id:"m19", text:"Weekly Agentic Economy series — 4 editions in Phase 2", status:"planned", priority:"medium" },
+    ]},
+    { phase: "Phase 3 · Days 90–180", tasks: [
+      { id:"m20", text:"WLFI white paper: 'USD1 as Critical Infrastructure' published", status:"planned", priority:"critical" },
+      { id:"m21", text:"White paper distributed to institutional + sovereign contacts", status:"planned", priority:"high" },
+      { id:"m22", text:"Economic study published — press + institutional distribution", status:"planned", priority:"high" },
+      { id:"m23", text:"Press milestone execution — $5B, $7.5B, $10B market cap", status:"planned", priority:"high" },
+      { id:"m24", text:"Second + third keynote appearances (Token2049, G42 event)", status:"planned", priority:"medium" },
+      { id:"m25", text:"Developer Guide V2 published with updated chain + EIP-3009 content", status:"planned", priority:"medium" },
+    ]},
+  ],
+};
+
+const STATUS_CFG = {
+  "live":        { label:"LIVE",        color:"#10B981", bg:"rgba(16,185,129,0.12)",  dot:"#10B981" },
+  "in-flight":   { label:"IN FLIGHT",   color:"#3B82F6", bg:"rgba(59,130,246,0.12)",  dot:"#3B82F6" },
+  "in-progress": { label:"IN PROGRESS", color:"#8B5CF6", bg:"rgba(139,92,246,0.12)",  dot:"#8B5CF6" },
+  "audit-gated": { label:"AUDIT-GATED", color:"#F59E0B", bg:"rgba(245,158,11,0.12)",  dot:"#F59E0B" },
+  "open":        { label:"OPEN",        color:"#94A3B8", bg:"rgba(148,163,184,0.08)", dot:"#94A3B8" },
+  "planned":     { label:"PLANNED",     color:"#64748B", bg:"rgba(100,116,139,0.08)", dot:"#64748B" },
+  "complete":    { label:"COMPLETE",    color:"#10B981", bg:"rgba(16,185,129,0.15)",  dot:"#10B981" },
+  "blocked":     { label:"BLOCKED",     color:"#EF4444", bg:"rgba(239,68,68,0.12)",   dot:"#EF4444" },
+  "overdue":     { label:"OVERDUE",     color:"#EF4444", bg:"rgba(239,68,68,0.12)",   dot:"#EF4444" },
+};
+
+const PRIORITY_CFG = {
+  "critical": { label:"CRITICAL", color:"#EF4444" },
+  "high":     { label:"HIGH",     color:"#F59E0B" },
+  "medium":   { label:"MED",      color:"#64748B" },
+};
+
+const STATUS_ORDER = ["complete","live","in-flight","in-progress","audit-gated","open","planned","blocked","overdue"];
+
+function StatusBadge({ status, small }) {
+  const s = STATUS_CFG[status] || STATUS_CFG["open"];
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:small?"2px 6px":"3px 8px",borderRadius:3,background:s.bg,border:`1px solid ${s.color}22`,fontSize:small?9:10,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:s.color,letterSpacing:"0.08em",whiteSpace:"nowrap"}}>
+      <span style={{width:5,height:5,borderRadius:"50%",background:s.dot,flexShrink:0,animation:["in-flight","in-progress"].includes(status)?"pulse-dot 1.6s ease infinite":"none"}}/>
+      {s.label}
+    </span>
+  );
+}
+
+function TaskRow({ task, onStatusChange }) {
+  const [open, setOpen] = useState(false);
+  const p = PRIORITY_CFG[task.priority] || PRIORITY_CFG["medium"];
+  return (
+    <div style={{background:"#0D1524",border:`1px solid ${task.status==="blocked"||task.status==="overdue"?"#EF444430":"#1E293B"}`,borderRadius:6,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,position:"relative"}}>
+      <div onClick={()=>onStatusChange(task.id, task.status==="complete"?"open":"complete")} style={{width:16,height:16,borderRadius:3,flexShrink:0,border:`2px solid ${task.status==="complete"?TEAM.color:"#334155"}`,background:task.status==="complete"?TEAM.color:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+        {task.status==="complete" && <span style={{fontSize:9,color:"#fff",lineHeight:1}}>✓</span>}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:13,color:task.status==="complete"?"#475569":"#CBD5E1",textDecoration:task.status==="complete"?"line-through":"none",lineHeight:1.4}}>{task.text}</div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+        <span style={{fontSize:9,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,color:p.color}}>{p.label}</span>
+        <div style={{position:"relative"}}>
+          <div onClick={()=>setOpen(!open)} style={{cursor:"pointer"}}><StatusBadge status={task.status} small /></div>
+          {open && (
+            <div style={{position:"absolute",right:0,top:"calc(100% + 4px)",zIndex:100,background:"#0F1929",border:"1px solid #1E293B",borderRadius:6,padding:4,minWidth:130,boxShadow:"0 8px 24px rgba(0,0,0,0.5)"}}>
+              {STATUS_ORDER.map(st => (
+                <div key={st} onClick={()=>{onStatusChange(task.id,st);setOpen(false);}} style={{padding:"6px 8px",borderRadius:4,cursor:"pointer",background:task.status===st?"#1E293B":"transparent"}}>
+                  <StatusBadge status={st} small/>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [taskData, setTaskData] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [openPhases, setOpenPhases] = useState({0:true,1:true,2:true});
+
+  const phases = ALL_TASKS[TEAM.id] || [];
+
+  useEffect(() => {
+    fetch('/api/tasks', {headers:{Authorization:'Basic ' + btoa(`${TEAM.id === 'bd' ? 'bd' : TEAM.id === 'defi' ? 'defi' : TEAM.id === 'legal' ? 'legal' : TEAM.id === 'mktg' ? 'marketing' : 'engineering'}:${window.__PASS__}`)}})
+      .then(r=>r.json()).then(d=>setTaskData(d)).catch(()=>{});
+  }, []);
+
+  const handleStatusChange = useCallback((taskId, newStatus) => {
+    setTaskData(prev => {
+      const updated = {...prev, [taskId]: newStatus};
+      setSaving(true);
+      fetch(`/api/tasks/${taskId}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({status:newStatus})
+      }).finally(()=>{setSaving(false);setLastSaved(new Date());});
+      return updated;
+    });
+  }, []);
+
+  const allTasks = phases.flatMap(p => p.tasks.map(t=>({...t, status: taskData[t.id]||t.status})));
+  const total = allTasks.length;
+  const done = allTasks.filter(t=>t.status==="complete"||t.status==="live").length;
+  const active = allTasks.filter(t=>["in-flight","in-progress"].includes(t.status)).length;
+  const blocked = allTasks.filter(t=>t.status==="blocked"||t.status==="overdue").length;
+  const pct = total ? Math.round((done/total)*100) : 0;
+
+  return (
+    <div style={{minHeight:"100vh",background:"#080C14",color:"#E2E8F0"}}>
+      {/* NAV */}
+      <div style={{background:"#0A1120",borderBottom:"1px solid #1E293B",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,zIndex:50}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:28,height:28,borderRadius:6,background:"linear-gradient(135deg,#1D4ED8 0%,#7C3AED 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>W</div>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,lineHeight:1}}>USD1 · {TEAM.name}</div>
+            <div style={{fontSize:9,color:"#475569",letterSpacing:"0.12em"}}>{TEAM.pillar} · EXECUTION TRACKER</div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          {saving && <span style={{fontSize:10,color:"#F59E0B",fontFamily:"'JetBrains Mono',monospace"}}>SAVING...</span>}
+          {lastSaved && !saving && <span style={{fontSize:10,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>SAVED {lastSaved.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>}
+          <div style={{background:"#0D1524",border:`1px solid ${TEAM.color}33`,borderRadius:4,padding:"4px 10px",fontSize:10,color:TEAM.color,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>● LIVE</div>
+        </div>
+      </div>
+
+      <div style={{maxWidth:900,margin:"0 auto",padding:"32px 24px"}}>
+
+        {/* HEADER */}
+        <div style={{background:`linear-gradient(135deg,${TEAM.color}18 0%,transparent 60%)`,border:`1px solid ${TEAM.color}30`,borderRadius:12,padding:"24px 28px",marginBottom:24}}>
+          <div style={{fontSize:11,color:TEAM.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.12em",marginBottom:6}}>{TEAM.pillar} · {TEAM.name.toUpperCase()}</div>
+          <div style={{fontSize:26,fontWeight:700,marginBottom:4}}>Your Execution Dashboard</div>
+          <div style={{fontSize:13,color:"#64748B"}}>Team Lead: <span style={{color:"#94A3B8",fontWeight:600}}>{TEAM.lead}</span></div>
+        </div>
+
+        {/* STATS */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
+          {[
+            {label:"TOTAL",val:total,color:"#94A3B8"},
+            {label:"COMPLETE",val:done,color:"#10B981"},
+            {label:"ACTIVE",val:active,color:TEAM.color},
+            {label:"BLOCKED",val:blocked,color:blocked>0?"#EF4444":"#334155"},
+          ].map(m=>(
+            <div key={m.label} style={{background:"#0D1524",border:`1px solid ${m.color}22`,borderRadius:8,padding:"14px 16px",textAlign:"center"}}>
+              <div style={{fontSize:28,fontWeight:700,color:m.color,fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{m.val}</div>
+              <div style={{fontSize:9,color:"#475569",letterSpacing:"0.1em",marginTop:6}}>{m.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* PROGRESS BAR */}
+        <div style={{background:"#0D1524",border:"1px solid #1E293B",borderRadius:8,padding:"16px 20px",marginBottom:24}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <span style={{fontSize:12,fontWeight:600,color:"#94A3B8",fontFamily:"'JetBrains Mono',monospace"}}>OVERALL PROGRESS</span>
+            <span style={{fontSize:16,fontWeight:700,color:TEAM.color,fontFamily:"'JetBrains Mono',monospace"}}>{pct}%</span>
+          </div>
+          <div style={{height:8,background:"#1E293B",borderRadius:4,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${pct}%`,background:TEAM.color,borderRadius:4,transition:"width 0.8s cubic-bezier(0.4,0,0.2,1)"}}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+            <span style={{fontSize:10,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>{done} of {total} tasks complete</span>
+            <span style={{fontSize:10,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>{total - done} remaining</span>
+          </div>
+        </div>
+
+        {/* PHASES */}
+        {phases.map((phase, pi) => {
+          const phaseTasks = phase.tasks.map(t=>({...t,status:taskData[t.id]||t.status}));
+          const pDone = phaseTasks.filter(t=>t.status==="complete"||t.status==="live").length;
+          const isOpen = openPhases[pi] !== false;
+          const critOpen = phaseTasks.filter(t=>t.priority==="critical"&&!["complete","live","in-flight","in-progress"].includes(t.status)).length;
+          return (
+            <div key={pi} style={{marginBottom:16}}>
+              <div onClick={()=>setOpenPhases(p=>({...p,[pi]:!p[pi]}))} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"#0D1524",border:`1px solid ${isOpen?TEAM.color+"30":"#1E293B"}`,borderRadius:isOpen?"8px 8px 0 0":8,cursor:"pointer"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:pDone===phaseTasks.length?"#10B981":TEAM.color}}/>
+                  <span style={{fontSize:13,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:"#E2E8F0"}}>{phase.phase}</span>
+                  {critOpen>0 && <span style={{fontSize:9,color:"#EF4444",fontFamily:"'JetBrains Mono',monospace",background:"#EF444415",padding:"2px 6px",borderRadius:3}}>{critOpen} CRITICAL OPEN</span>}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:"#475569"}}>{pDone}/{phaseTasks.length}</span>
+                  <div style={{width:80,height:3,background:"#1E293B",borderRadius:2,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${(pDone/phaseTasks.length)*100}%`,background:TEAM.color,borderRadius:2,transition:"width 0.5s"}}/>
+                  </div>
+                  <span style={{fontSize:10,color:"#475569"}}>{isOpen?"▲":"▼"}</span>
+                </div>
+              </div>
+              {isOpen && (
+                <div style={{border:`1px solid ${TEAM.color}20`,borderTop:"none",borderRadius:"0 0 8px 8px",padding:8,display:"flex",flexDirection:"column",gap:4,background:"#080C14"}}>
+                  {phaseTasks.map(task=>(
+                    <TaskRow key={task.id} task={task} onStatusChange={handleStatusChange}/>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* FOOTER */}
+        <div style={{marginTop:32,padding:"16px 20px",background:"#0D1524",border:"1px solid #1E293B",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{fontSize:11,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>USD1 Strategic Dominance Roadmap · {TEAM.pillar}</span>
+          <span style={{fontSize:11,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>Status updates sync to leadership in real time</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
